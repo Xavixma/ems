@@ -158,13 +158,55 @@
       max-width: 680px;
     }
 
-    .chart-card .label {
+    .chart-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 1rem;
+    }
+
+    .chart-header .label {
       font-size: 0.7rem;
       font-weight: 600;
       letter-spacing: 0.1em;
       text-transform: uppercase;
       color: #555;
-      margin-bottom: 1rem;
+    }
+
+    .date-nav {
+      display: flex;
+      align-items: center;
+      gap: 0.4rem;
+    }
+
+    .date-nav button {
+      background: #2a2d3a;
+      border: 1px solid #3a3d4a;
+      border-radius: 0.4rem;
+      color: #aaa;
+      cursor: pointer;
+      font-size: 0.85rem;
+      line-height: 1;
+      padding: 0.3rem 0.5rem;
+    }
+
+    .date-nav button:hover { background: #353850; color: #e8eaf0; }
+    .date-nav button:disabled { opacity: 0.3; cursor: default; }
+
+    .date-nav input[type="date"] {
+      background: #2a2d3a;
+      border: 1px solid #3a3d4a;
+      border-radius: 0.4rem;
+      color: #e8eaf0;
+      font-family: inherit;
+      font-size: 0.8rem;
+      padding: 0.3rem 0.5rem;
+      cursor: pointer;
+    }
+
+    .date-nav input[type="date"]::-webkit-calendar-picker-indicator {
+      filter: invert(0.6);
+      cursor: pointer;
     }
 
     footer {
@@ -212,7 +254,14 @@
   </div>
 
   <div class="chart-card">
-    <div class="label">Producció per hora — avui</div>
+    <div class="chart-header">
+      <div class="label" id="chart-label">Producció per hora</div>
+      <div class="date-nav">
+        <button id="prev-day" title="Dia anterior">&#8592;</button>
+        <input type="date" id="history-date">
+        <button id="next-day" title="Dia següent">&#8594;</button>
+      </div>
+    </div>
     <canvas id="history-chart" height="120"></canvas>
   </div>
 
@@ -221,11 +270,29 @@
   </footer>
 
   <script>
-    const MAX_POWER_KW = 3.0; // adjust to your inverter peak
+    const MAX_POWER_KW = 3.0;
     let countdown = 30;
 
+    // --- Date helpers ---
+    function localDateStr(d) {
+      return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
+    }
+
+    function offsetDate(dateStr, days) {
+      const [y, m, d] = dateStr.split('-').map(Number);
+      return localDateStr(new Date(y, m - 1, d + days));
+    }
+
+    const todayStr = localDateStr(new Date());
+    const dateInput = document.getElementById('history-date');
+    dateInput.value = todayStr;
+    dateInput.max = todayStr;
+
+    function isToday() {
+      return dateInput.value === todayStr;
+    }
+
     // --- Chart setup ---
-    const currentHour = new Date().getHours();
     const labels = Array.from({length: 24}, (_, h) => `${String(h).padStart(2, '0')}h`);
 
     const chart = new Chart(document.getElementById('history-chart'), {
@@ -234,9 +301,7 @@
         labels,
         datasets: [{
           data: new Array(24).fill(0),
-          backgroundColor: labels.map((_, h) =>
-            h === currentHour ? '#facc15' : '#2a3a5a'
-          ),
+          backgroundColor: new Array(24).fill('#2a3a5a'),
           borderRadius: 4,
           borderSkipped: false,
         }],
@@ -258,35 +323,44 @@
       },
     });
 
-    // --- Data fetching ---
+    // --- History fetch ---
+    async function fetchHistory() {
+      const date = dateInput.value;
+      const url = isToday() ? '/solar/history' : `/solar/history?date=${date}`;
+      const history = await fetch(url).then(r => r.json());
+
+      const nowHour = isToday() ? new Date().getHours() : -1;
+      chart.data.datasets[0].data = history.map(h => h.avg_kw);
+      chart.data.datasets[0].backgroundColor = history.map(h =>
+        h.hour === nowHour ? '#facc15' : '#2a3a5a'
+      );
+      chart.update();
+
+      document.getElementById('chart-label').textContent =
+        isToday() ? 'Producció per hora — avui' : `Producció per hora — ${date}`;
+
+      document.getElementById('next-day').disabled = isToday();
+    }
+
+    // --- Live data fetch ---
     async function refresh() {
       try {
-        const [prod, history] = await Promise.all([
-          fetch('/solar/production').then(r => r.json()),
-          fetch('/solar/history').then(r => r.json()),
-        ]);
+        const prod = await fetch('/solar/production').then(r => r.json());
 
-        // Current production card
         document.getElementById('dc-power').textContent = (prod.dc_power / 1000).toFixed(2);
         document.getElementById('today').textContent = prod.today_production.toFixed(2);
         document.getElementById('total').textContent = prod.total_production.toFixed(1);
 
         const badge = document.getElementById('status-badge');
-        const powerEl = document.getElementById('dc-power');
         badge.className = 'status-badge ' + prod.status;
         document.getElementById('status-text').textContent = prod.status;
-        powerEl.className = 'power ' + (prod.status === 'offline' ? 'offline' : '');
+        document.getElementById('dc-power').className = 'power ' + (prod.status === 'offline' ? 'offline' : '');
 
         const pct = Math.min(100, (prod.dc_power / 1000 / MAX_POWER_KW) * 100);
         document.getElementById('power-bar').style.width = pct + '%';
 
-        // Chart
-        const nowHour = new Date().getHours();
-        chart.data.datasets[0].data = history.map(h => h.avg_kw);
-        chart.data.datasets[0].backgroundColor = history.map(h =>
-          h.hour === nowHour ? '#facc15' : '#2a3a5a'
-        );
-        chart.update();
+        // Only refresh chart automatically when viewing today
+        if (isToday()) await fetchHistory();
 
         document.getElementById('updated').textContent = new Date().toLocaleTimeString('ca-ES');
         countdown = 30;
@@ -296,6 +370,23 @@
       }
     }
 
+    // --- Date navigation ---
+    dateInput.addEventListener('change', fetchHistory);
+
+    document.getElementById('prev-day').addEventListener('click', () => {
+      dateInput.value = offsetDate(dateInput.value, -1);
+      fetchHistory();
+    });
+
+    document.getElementById('next-day').addEventListener('click', () => {
+      const next = offsetDate(dateInput.value, +1);
+      if (next <= todayStr) {
+        dateInput.value = next;
+        fetchHistory();
+      }
+    });
+
+    // --- Timer ---
     setInterval(() => {
       countdown--;
       document.getElementById('countdown').textContent = countdown;

@@ -38,7 +38,7 @@ class WallboxClient:
             headers={"Authorization": f"Basic {credentials}", "Accept": "application/json"},
         )
         resp.raise_for_status()
-        self._token = resp.json()["data"]["attributes"]["token"]
+        self._token = resp.json()["jwt"]
         return self._token
 
     async def _headers(self) -> dict:
@@ -62,14 +62,15 @@ class WallboxClient:
         return resp
 
     async def get_status(self) -> dict:
-        resp = await self._request("GET", f"/v2/charger/{self._charger_id}/status")
+        resp = await self._request("GET", f"/chargers/status/{self._charger_id}")
         data = resp.json()
+        config = data.get("config_data", {})
         return {
             "status": str(data.get("status_id", "unknown")),
             "charging_power": float(data.get("charging_power", 0)),
-            "max_charging_current": int(data.get("max_charging_current", 0)),
+            "max_charging_current": int(config.get("max_charging_current", 0)),
             "session_energy": float(data.get("added_energy", 0)),
-            "locked": bool(data.get("locked", False)),
+            "locked": bool(config.get("locked", False)),
         }
 
     async def start_charging(self) -> None:

@@ -56,14 +56,21 @@ class InfluxWriter:
         except Exception as e:
             logger.warning("InfluxDB write_ems_event failed: %s", e)
 
-    async def query_solar_hourly_avg(self) -> list[dict]:
-        today = date.today()
-        start = datetime(today.year, today.month, today.day, tzinfo=timezone.utc).strftime(
+    async def query_solar_hourly_avg(self, for_date: date | None = None) -> list[dict]:
+        target = for_date or date.today()
+        start = datetime(target.year, target.month, target.day, tzinfo=timezone.utc).strftime(
             "%Y-%m-%dT%H:%M:%SZ"
         )
+        # For past dates use end-of-day; for today cap at now() to avoid empty future hours
+        if target < date.today():
+            stop = datetime(target.year, target.month, target.day, 23, 59, 59, tzinfo=timezone.utc).strftime(
+                "%Y-%m-%dT%H:%M:%SZ"
+            )
+        else:
+            stop = "now()"
         query = f"""
 from(bucket: "{self._bucket}")
-  |> range(start: {start}, stop: now())
+  |> range(start: {start}, stop: {stop})
   |> filter(fn: (r) => r._measurement == "solar" and r._field == "dc_power")
   |> aggregateWindow(every: 1h, fn: mean, createEmpty: true)
   |> fill(value: 0.0)

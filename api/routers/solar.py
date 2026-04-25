@@ -1,3 +1,5 @@
+from datetime import date
+
 from fastapi import APIRouter, Depends
 from api.dependencies import get_solar_client, get_influx_writer
 from api.models.solar import SolarProduction, SolarStats
@@ -23,5 +25,8 @@ async def get_stats(client: HoymilesClient = Depends(get_solar_client)):
 
 
 @router.get("/history")
-async def get_history(influx: InfluxWriter = Depends(get_influx_writer)):
-    return await influx.query_solar_hourly_avg()
+async def get_history(
+    date: date | None = None,
+    influx: InfluxWriter = Depends(get_influx_writer),
+):
+    return await influx.query_solar_hourly_avg(for_date=date)
