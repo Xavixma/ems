@@ -1,0 +1,308 @@
+<!DOCTYPE html>
+<html lang="ca">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>EMS — Solar</title>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: system-ui, -apple-system, sans-serif;
+      background: #0a0f2e;
+      color: #e8eaf0;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      padding: 2rem;
+      gap: 1rem;
+    }
+
+    header {
+      text-align: center;
+    }
+
+    header h1 {
+      font-size: 1.1rem;
+      font-weight: 600;
+      letter-spacing: 0.15em;
+      text-transform: uppercase;
+      color: #888;
+    }
+
+    .status-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.4rem;
+      margin-top: 0.6rem;
+      font-size: 0.8rem;
+      font-weight: 500;
+      letter-spacing: 0.05em;
+      text-transform: uppercase;
+    }
+
+    .status-dot {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      background: #555;
+      transition: background 0.3s;
+    }
+
+    .status-badge.online .status-dot  { background: #22c55e; box-shadow: 0 0 6px #22c55e; }
+    .status-badge.offline .status-dot { background: #ef4444; }
+    .status-badge.online              { color: #22c55e; }
+    .status-badge.offline             { color: #ef4444; }
+
+    .main-card {
+      background: #1a1d27;
+      border: 1px solid #2a2d3a;
+      border-radius: 1.5rem;
+      padding: 2.5rem 3.5rem;
+      text-align: center;
+      min-width: 280px;
+    }
+
+    .main-card .label {
+      font-size: 0.75rem;
+      font-weight: 600;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      color: #666;
+      margin-bottom: 0.75rem;
+    }
+
+    .main-card .power {
+      font-size: 5rem;
+      font-weight: 700;
+      line-height: 1;
+      color: #facc15;
+      font-variant-numeric: tabular-nums;
+      transition: color 0.4s;
+    }
+
+    .main-card .power.offline { color: #444; }
+
+    .main-card .unit {
+      font-size: 1.5rem;
+      font-weight: 400;
+      color: #666;
+      margin-top: 0.25rem;
+    }
+
+    .power-bar-wrap {
+      margin: 1.25rem auto 0;
+      width: 100%;
+      max-width: 260px;
+      height: 6px;
+      background: #2a2d3a;
+      border-radius: 99px;
+      overflow: hidden;
+    }
+
+    .power-bar {
+      height: 100%;
+      background: linear-gradient(90deg, #f59e0b, #facc15);
+      border-radius: 99px;
+      width: 0%;
+      transition: width 0.6s ease;
+    }
+
+    .stats {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 1rem;
+      width: 100%;
+      max-width: 380px;
+    }
+
+    .stat-card {
+      background: #1a1d27;
+      border: 1px solid #2a2d3a;
+      border-radius: 1rem;
+      padding: 1.25rem 1.5rem;
+      text-align: center;
+    }
+
+    .stat-card .label {
+      font-size: 0.7rem;
+      font-weight: 600;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      color: #555;
+      margin-bottom: 0.5rem;
+    }
+
+    .stat-card .value {
+      font-size: 1.75rem;
+      font-weight: 700;
+      color: #c4b5fd;
+      font-variant-numeric: tabular-nums;
+    }
+
+    .stat-card .unit {
+      font-size: 0.75rem;
+      color: #555;
+      margin-top: 0.15rem;
+    }
+
+    .chart-card {
+      background: #1a1d27;
+      border: 1px solid #2a2d3a;
+      border-radius: 1.5rem;
+      padding: 1.5rem 2rem;
+      width: 100%;
+      max-width: 680px;
+    }
+
+    .chart-card .label {
+      font-size: 0.7rem;
+      font-weight: 600;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      color: #555;
+      margin-bottom: 1rem;
+    }
+
+    footer {
+      font-size: 0.75rem;
+      color: #444;
+    }
+
+    #countdown { color: #555; }
+  </style>
+</head>
+<body>
+
+  <header>
+    <h1>⚡ Energy Management System</h1>
+    <nav style="display:flex;gap:1.5rem;justify-content:center;margin-top:0.75rem;">
+      <a href="/index.html" style="font-size:0.75rem;font-weight:600;letter-spacing:0.08em;text-transform:uppercase;color:#60a5fa;text-decoration:none;border-bottom:1px solid #60a5fa;padding-bottom:2px;">Solar</a>
+      <a href="/wallbox.html" style="font-size:0.75rem;font-weight:600;letter-spacing:0.08em;text-transform:uppercase;color:#555;text-decoration:none;">Wallbox</a>
+    </nav>
+    <div class="status-badge" id="status-badge">
+      <div class="status-dot"></div>
+      <span id="status-text">--</span>
+    </div>
+  </header>
+
+  <div class="main-card">
+    <div class="label">Producció solar</div>
+    <div class="power" id="dc-power">--</div>
+    <div class="unit">kW</div>
+    <div class="power-bar-wrap">
+      <div class="power-bar" id="power-bar"></div>
+    </div>
+  </div>
+
+  <div class="stats">
+    <div class="stat-card">
+      <div class="label">Avui</div>
+      <div class="value" id="today">--</div>
+      <div class="unit">kWh</div>
+    </div>
+    <div class="stat-card">
+      <div class="label">Total</div>
+      <div class="value" id="total">--</div>
+      <div class="unit">kWh</div>
+    </div>
+  </div>
+
+  <div class="chart-card">
+    <div class="label">Producció per hora — avui</div>
+    <canvas id="history-chart" height="120"></canvas>
+  </div>
+
+  <footer>
+    Actualitzat: <span id="updated">--</span> &nbsp;·&nbsp; proper actualització en <span id="countdown">30</span>s
+  </footer>
+
+  <script>
+    const MAX_POWER_KW = 3.0; // adjust to your inverter peak
+    let countdown = 30;
+
+    // --- Chart setup ---
+    const currentHour = new Date().getHours();
+    const labels = Array.from({length: 24}, (_, h) => `${String(h).padStart(2, '0')}h`);
+
+    const chart = new Chart(document.getElementById('history-chart'), {
+      type: 'bar',
+      data: {
+        labels,
+        datasets: [{
+          data: new Array(24).fill(0),
+          backgroundColor: labels.map((_, h) =>
+            h === currentHour ? '#facc15' : '#2a3a5a'
+          ),
+          borderRadius: 4,
+          borderSkipped: false,
+        }],
+      },
+      options: {
+        plugins: { legend: { display: false }, tooltip: {
+          callbacks: { label: ctx => ` ${ctx.parsed.y.toFixed(2)} kW` }
+        }},
+        scales: {
+          x: { grid: { color: '#1e2130' }, ticks: { color: '#555', font: { size: 11 } } },
+          y: {
+            grid: { color: '#1e2130' },
+            ticks: { color: '#555', font: { size: 11 }, callback: v => v.toFixed(1) },
+            min: 0,
+            suggestedMax: MAX_POWER_KW,
+          },
+        },
+        animation: { duration: 400 },
+      },
+    });
+
+    // --- Data fetching ---
+    async function refresh() {
+      try {
+        const [prod, history] = await Promise.all([
+          fetch('/solar/production').then(r => r.json()),
+          fetch('/solar/history').then(r => r.json()),
+        ]);
+
+        // Current production card
+        document.getElementById('dc-power').textContent = (prod.dc_power / 1000).toFixed(2);
+        document.getElementById('today').textContent = prod.today_production.toFixed(2);
+        document.getElementById('total').textContent = prod.total_production.toFixed(1);
+
+        const badge = document.getElementById('status-badge');
+        const powerEl = document.getElementById('dc-power');
+        badge.className = 'status-badge ' + prod.status;
+        document.getElementById('status-text').textContent = prod.status;
+        powerEl.className = 'power ' + (prod.status === 'offline' ? 'offline' : '');
+
+        const pct = Math.min(100, (prod.dc_power / 1000 / MAX_POWER_KW) * 100);
+        document.getElementById('power-bar').style.width = pct + '%';
+
+        // Chart
+        const nowHour = new Date().getHours();
+        chart.data.datasets[0].data = history.map(h => h.avg_kw);
+        chart.data.datasets[0].backgroundColor = history.map(h =>
+          h.hour === nowHour ? '#facc15' : '#2a3a5a'
+        );
+        chart.update();
+
+        document.getElementById('updated').textContent = new Date().toLocaleTimeString('ca-ES');
+        countdown = 30;
+      } catch (e) {
+        document.getElementById('status-text').textContent = 'error';
+        document.getElementById('status-badge').className = 'status-badge offline';
+      }
+    }
+
+    setInterval(() => {
+      countdown--;
+      document.getElementById('countdown').textContent = countdown;
+      if (countdown <= 0) refresh();
+    }, 1000);
+
+    refresh();
+  </script>
+</body>
+</html>

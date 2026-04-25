@@ -1,0 +1,455 @@
+<!DOCTYPE html>
+<html lang="ca">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>EMS — Wallbox</title>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: system-ui, -apple-system, sans-serif;
+      background: #0a0f2e;
+      color: #e8eaf0;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      padding: 2rem;
+      gap: 1rem;
+    }
+
+    header { text-align: center; }
+
+    header h1 {
+      font-size: 1.1rem;
+      font-weight: 600;
+      letter-spacing: 0.15em;
+      text-transform: uppercase;
+      color: #888;
+    }
+
+    nav {
+      display: flex;
+      gap: 1.5rem;
+      margin-top: 0.75rem;
+    }
+
+    nav a {
+      font-size: 0.75rem;
+      font-weight: 600;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      color: #555;
+      text-decoration: none;
+      transition: color 0.2s;
+    }
+
+    nav a:hover { color: #e8eaf0; }
+    nav a.active { color: #60a5fa; border-bottom: 1px solid #60a5fa; padding-bottom: 2px; }
+
+    .card {
+      background: #1a1d27;
+      border: 1px solid #2a2d3a;
+      border-radius: 1.5rem;
+      padding: 1.75rem 2rem;
+      width: 100%;
+      max-width: 420px;
+    }
+
+    .card-label {
+      font-size: 0.7rem;
+      font-weight: 600;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      color: #555;
+      margin-bottom: 1.25rem;
+    }
+
+    /* Status card */
+    .status-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 1.25rem;
+    }
+
+    .status-pill {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.4rem;
+      padding: 0.3rem 0.75rem;
+      border-radius: 99px;
+      font-size: 0.8rem;
+      font-weight: 600;
+      letter-spacing: 0.05em;
+      text-transform: uppercase;
+      background: #2a2d3a;
+      color: #888;
+      transition: all 0.3s;
+    }
+
+    .status-dot {
+      width: 7px;
+      height: 7px;
+      border-radius: 50%;
+      background: currentColor;
+    }
+
+    .status-pill.charging { background: #14532d; color: #4ade80; }
+    .status-pill.ready    { background: #1e3a5f; color: #60a5fa; }
+    .status-pill.paused   { background: #3b2f0f; color: #fbbf24; }
+    .status-pill.locked   { background: #2d1b1b; color: #f87171; }
+
+    .metrics {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 0.75rem;
+    }
+
+    .metric {
+      background: #13161f;
+      border-radius: 0.75rem;
+      padding: 0.9rem 1rem;
+      text-align: center;
+    }
+
+    .metric .m-label {
+      font-size: 0.65rem;
+      font-weight: 600;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      color: #555;
+      margin-bottom: 0.35rem;
+    }
+
+    .metric .m-value {
+      font-size: 1.5rem;
+      font-weight: 700;
+      font-variant-numeric: tabular-nums;
+      color: #c4b5fd;
+    }
+
+    .metric .m-unit {
+      font-size: 0.7rem;
+      color: #555;
+    }
+
+    /* Controls card */
+    .btn-row {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 0.75rem;
+      margin-bottom: 1.5rem;
+    }
+
+    button {
+      padding: 0.75rem 1rem;
+      border: none;
+      border-radius: 0.75rem;
+      font-size: 0.85rem;
+      font-weight: 600;
+      cursor: pointer;
+      transition: opacity 0.15s, transform 0.1s;
+    }
+
+    button:active { transform: scale(0.97); }
+    button:disabled { opacity: 0.35; cursor: not-allowed; }
+
+    .btn-start { background: #166534; color: #4ade80; }
+    .btn-stop  { background: #7f1d1d; color: #f87171; }
+
+    .btn-start:hover:not(:disabled) { background: #15803d; }
+    .btn-stop:hover:not(:disabled)  { background: #991b1b; }
+
+    .slider-label {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      font-size: 0.75rem;
+      color: #666;
+      margin-bottom: 0.5rem;
+    }
+
+    .slider-label span { color: #c4b5fd; font-weight: 700; font-size: 0.9rem; }
+
+    input[type=range] {
+      width: 100%;
+      accent-color: #818cf8;
+      height: 6px;
+      cursor: pointer;
+    }
+
+    .slider-ticks {
+      display: flex;
+      justify-content: space-between;
+      font-size: 0.6rem;
+      color: #444;
+      margin-top: 0.3rem;
+    }
+
+    .btn-apply {
+      width: 100%;
+      margin-top: 1rem;
+      padding: 0.75rem;
+      background: #1e3a5f;
+      color: #60a5fa;
+      border-radius: 0.75rem;
+      font-size: 0.85rem;
+      font-weight: 600;
+    }
+
+    .btn-apply:hover:not(:disabled) { background: #1d4ed8; color: #fff; }
+
+    /* EMS mode card */
+    .mode-row {
+      display: grid;
+      grid-template-columns: 1fr 1fr 1fr;
+      gap: 0.6rem;
+    }
+
+    .mode-btn {
+      padding: 0.65rem 0.5rem;
+      border-radius: 0.75rem;
+      background: #13161f;
+      color: #555;
+      font-size: 0.8rem;
+      font-weight: 600;
+      letter-spacing: 0.05em;
+      text-transform: uppercase;
+      border: 1px solid #2a2d3a;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+
+    .mode-btn:hover { border-color: #555; color: #aaa; }
+    .mode-btn.active-manual { background: #1a2a1a; color: #4ade80; border-color: #4ade80; }
+    .mode-btn.active-auto   { background: #1e2a4a; color: #60a5fa; border-color: #60a5fa; }
+    .mode-btn.active-eco    { background: #2a2210; color: #fbbf24; border-color: #fbbf24; }
+
+    .last-action {
+      margin-top: 1rem;
+      font-size: 0.7rem;
+      color: #444;
+      text-align: center;
+    }
+
+    .last-action span { color: #666; }
+
+    footer {
+      font-size: 0.75rem;
+      color: #444;
+    }
+
+    #countdown { color: #555; }
+
+    .toast {
+      position: fixed;
+      bottom: 2rem;
+      left: 50%;
+      transform: translateX(-50%) translateY(2rem);
+      background: #1a1d27;
+      border: 1px solid #2a2d3a;
+      border-radius: 0.75rem;
+      padding: 0.6rem 1.2rem;
+      font-size: 0.8rem;
+      color: #aaa;
+      opacity: 0;
+      transition: all 0.3s;
+      pointer-events: none;
+    }
+
+    .toast.show {
+      opacity: 1;
+      transform: translateX(-50%) translateY(0);
+    }
+  </style>
+</head>
+<body>
+
+  <header>
+    <h1>⚡ Energy Management System</h1>
+    <nav>
+      <a href="/index.html">Solar</a>
+      <a href="/wallbox.html" class="active">Wallbox</a>
+    </nav>
+  </header>
+
+  <!-- Status -->
+  <div class="card">
+    <div class="card-label">Estat del carregador</div>
+    <div class="status-row">
+      <div class="status-pill" id="status-pill">
+        <div class="status-dot"></div>
+        <span id="status-text">--</span>
+      </div>
+      <span id="locked-badge" style="font-size:0.75rem;color:#555;display:none">🔒 Bloquejat</span>
+    </div>
+    <div class="metrics">
+      <div class="metric">
+        <div class="m-label">Potència</div>
+        <div class="m-value" id="power">--</div>
+        <div class="m-unit">kW</div>
+      </div>
+      <div class="metric">
+        <div class="m-label">Sessió</div>
+        <div class="m-value" id="session">--</div>
+        <div class="m-unit">kWh</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Controls -->
+  <div class="card">
+    <div class="card-label">Control de càrrega</div>
+    <div class="btn-row">
+      <button class="btn-start" onclick="action('start')">▶ Iniciar</button>
+      <button class="btn-stop"  onclick="action('stop')">■ Aturar</button>
+    </div>
+    <div class="slider-label">
+      <span>Límit de corrent</span>
+      <span><span id="amps-display">6</span> A</span>
+    </div>
+    <input type="range" id="amps-slider" min="6" max="32" step="1" value="6"
+      oninput="document.getElementById('amps-display').textContent = this.value">
+    <div class="slider-ticks">
+      <span>6A</span><span>10A</span><span>16A</span><span>20A</span><span>25A</span><span>32A</span>
+    </div>
+    <button class="btn-apply" onclick="applyCurrentLimit()">Aplicar límit</button>
+  </div>
+
+  <!-- EMS Mode -->
+  <div class="card">
+    <div class="card-label">Mode EMS</div>
+    <div class="mode-row">
+      <button class="mode-btn" id="btn-manual" onclick="setMode('manual')">Manual</button>
+      <button class="mode-btn" id="btn-auto"   onclick="setMode('auto')">Auto</button>
+      <button class="mode-btn" id="btn-eco"    onclick="setMode('eco')">Eco</button>
+    </div>
+    <div class="last-action">
+      Última acció: <span id="last-action">--</span>
+    </div>
+  </div>
+
+  <footer>
+    Actualitzat: <span id="updated">--</span> &nbsp;·&nbsp; proper actualització en <span id="countdown">10</span>s
+  </footer>
+
+  <div class="toast" id="toast"></div>
+
+  <script>
+    let countdown = 10;
+
+    const STATUS_MAP = {
+      '193': 'charging', '194': 'charging', '195': 'charging', '196': 'charging',
+      '161': 'ready', '162': 'ready', '163': 'ready',
+      '177': 'paused', '178': 'paused', '179': 'paused',
+      '209': 'locked', '210': 'locked',
+    };
+
+    const STATUS_LABEL = {
+      charging: 'Carregant',
+      ready:    'Connectat',
+      paused:   'Pausat',
+      locked:   'Bloquejat',
+    };
+
+    function showToast(msg, ok = true) {
+      const t = document.getElementById('toast');
+      t.textContent = msg;
+      t.style.borderColor = ok ? '#4ade80' : '#f87171';
+      t.classList.add('show');
+      setTimeout(() => t.classList.remove('show'), 2500);
+    }
+
+    async function refresh() {
+      try {
+        const [wb, ems] = await Promise.all([
+          fetch('/wallbox/status').then(r => r.json()),
+          fetch('/ems/status').then(r => r.json()),
+        ]);
+
+        // Status pill
+        const state = STATUS_MAP[wb.status] ?? 'ready';
+        const pill = document.getElementById('status-pill');
+        pill.className = 'status-pill ' + state;
+        document.getElementById('status-text').textContent = STATUS_LABEL[state] ?? wb.status;
+        document.getElementById('locked-badge').style.display = wb.locked ? 'inline' : 'none';
+
+        // Metrics
+        document.getElementById('power').textContent = (wb.charging_power / 1000).toFixed(2);
+        document.getElementById('session').textContent = wb.session_energy.toFixed(2);
+
+        // Sync slider to current limit (only if user isn't touching it)
+        if (document.activeElement !== document.getElementById('amps-slider')) {
+          document.getElementById('amps-slider').value = wb.max_charging_current;
+          document.getElementById('amps-display').textContent = wb.max_charging_current;
+        }
+
+        // EMS mode buttons
+        ['manual','auto','eco'].forEach(m => {
+          const btn = document.getElementById('btn-' + m);
+          btn.className = 'mode-btn' + (ems.mode === m ? ' active-' + m : '');
+        });
+
+        document.getElementById('last-action').textContent = ems.last_action ?? '--';
+        document.getElementById('updated').textContent = new Date().toLocaleTimeString('ca-ES');
+        countdown = 10;
+      } catch (e) {
+        showToast('Error de connexió', false);
+      }
+    }
+
+    async function action(type) {
+      try {
+        const res = await fetch(`/wallbox/${type}`, { method: 'POST' });
+        if (!res.ok) throw new Error();
+        showToast(type === 'start' ? 'Càrrega iniciada' : 'Càrrega aturada');
+        refresh();
+      } catch {
+        showToast('Error en l\'acció', false);
+      }
+    }
+
+    async function applyCurrentLimit() {
+      const amps = parseInt(document.getElementById('amps-slider').value);
+      try {
+        const res = await fetch('/wallbox/current-limit', {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ amps }),
+        });
+        if (!res.ok) throw new Error();
+        showToast(`Límit establert a ${amps}A`);
+        refresh();
+      } catch {
+        showToast('Error al canviar el límit', false);
+      }
+    }
+
+    async function setMode(mode) {
+      try {
+        const res = await fetch('/ems/mode', {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ mode }),
+        });
+        if (!res.ok) throw new Error();
+        showToast(`Mode ${mode} activat`);
+        refresh();
+      } catch {
+        showToast('Error al canviar el mode', false);
+      }
+    }
+
+    setInterval(() => {
+      countdown--;
+      document.getElementById('countdown').textContent = countdown;
+      if (countdown <= 0) refresh();
+    }, 1000);
+
+    refresh();
+  </script>
+</body>
+</html>
