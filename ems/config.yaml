@@ -2,12 +2,11 @@ name: "EMS - Energy Management System"
 version: "1.0.3"
 slug: "ems"
 description: "Gestió energètica per solar Hoymiles i carregador EV Wallbox Pulsar Max"
-url: "https://github.com/YOUR_USER/ems"
+url: "https://github.com/xavixma/ems"
 arch:
   - aarch64
   - amd64
-  - armv7
-image: "ghcr.io/xavixma/ems:{arch}-{version}"
+image: "ghcr.io/xavixma/ems-{arch}"
 startup: application
 boot: auto
 ports:
@@ -16,9 +15,9 @@ ports_description:
   8000/tcp: "EMS REST API"
 options:
   hoymiles_dtu_ip: "192.168.3.96"
-  wallbox_charger_id: "1111113"
-  wallbox_email: "xavi.xma@gmail.com"
-  wallbox_password: "Biel2013"
+  wallbox_charger_id: ""
+  wallbox_email: ""
+  wallbox_password: ""
   mqtt_host: "core-mosquitto"
   mqtt_port: 1883
   mqtt_username: "ems"
