@@ -41,8 +41,7 @@ jobs:
           platforms: linux/arm64
           push: true
           tags: |
-            ghcr.io/xavixma/ems:latest
-            ghcr.io/xavixma/ems:${{ steps.meta.outputs.version }}
-            ghcr.io/xavixma/ems:aarch64-${{ steps.meta.outputs.version }}
+            ghcr.io/xavixma/ems-aarch64:latest
+            ghcr.io/xavixma/ems-aarch64:${{ steps.meta.outputs.version }}
           cache-from: type=gha
           cache-to: type=gha,mode=max
