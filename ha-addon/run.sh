@@ -1,6 +1,6 @@
 #!/usr/bin/with-contenv bashio
 
-bashio::log.info "Starting EMS - Energy Management System..."
+bashio::log.info "Starting EMS..."
 
 export HOYMILES_DTU_IP="$(bashio::config 'hoymiles_dtu_ip')"
 export WALLBOX_CHARGER_ID="$(bashio::config 'wallbox_charger_id')"
