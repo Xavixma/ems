@@ -14,10 +14,10 @@ ports:
 ports_description:
   8000/tcp: "EMS REST API"
 options:
-  hoymiles_dtu_ip: "192.168.1.XXX"
-  wallbox_charger_id: "XXXXXXXX"
-  wallbox_email: "email@example.com"
-  wallbox_password: ""
+  hoymiles_dtu_ip: "192.168.3.96"
+  wallbox_charger_id: "1111113"
+  wallbox_email: "xavi.xma@gmail.com"
+  wallbox_password: "Biel2013"
   mqtt_host: "core-mosquitto"
   mqtt_port: 1883
   mqtt_username: "ems"
