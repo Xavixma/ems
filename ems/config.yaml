@@ -6,7 +6,7 @@ url: "https://github.com/xavixma/ems"
 arch:
   - aarch64
   - amd64
-image: "ghcr.io/xavixma/ems-{arch}"
+image: "ghcr.io/xavixma/ems:{arch}"
 startup: application
 boot: auto
 ports:
