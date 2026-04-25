@@ -11,14 +11,14 @@ permissions:
 jobs:
   build:
     runs-on: ubuntu-latest
-
     steps:
       - uses: actions/checkout@v4
 
       - name: Extract version from config.yaml
         id: meta
         run: |
-          echo "version=$(grep '^version:' ha-addon/config.yaml | awk '{print $2}' | tr -d '\"')" >> $GITHUB_OUTPUT
+          VERSION=$(grep '^version:' ems/config.yaml | awk '{print $2}' | tr -d '"')
+          echo "version=$VERSION" >> $GITHUB_OUTPUT
 
       - name: Set up QEMU
         uses: docker/setup-qemu-action@v3
@@ -37,7 +37,7 @@ jobs:
         uses: docker/build-push-action@v5
         with:
           context: .
-          file: ha-addon/Dockerfile
+          file: ems/Dockerfile
           platforms: linux/arm64
           push: true
           tags: |
