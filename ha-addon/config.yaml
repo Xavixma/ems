@@ -1,0 +1,55 @@
+name: "EMS - Energy Management System"
+version: "1.0.0"
+slug: "ems"
+description: "Gestió energètica per solar Hoymiles i carregador EV Wallbox Pulsar Max"
+url: "https://github.com/YOUR_USER/ems"
+arch:
+  - aarch64
+  - amd64
+  - armv7
+startup: application
+boot: auto
+ports:
+  8000/tcp: 8000
+ports_description:
+  8000/tcp: "EMS REST API"
+options:
+  hoymiles_dtu_ip: "192.168.1.XXX"
+  wallbox_charger_id: "XXXXXXXX"
+  wallbox_email: "email@example.com"
+  wallbox_password: ""
+  mqtt_host: "core-mosquitto"
+  mqtt_port: 1883
+  mqtt_username: "ems"
+  mqtt_password: ""
+  influxdb_url: ""
+  influxdb_token: ""
+  influxdb_org: "ems"
+  influxdb_bucket: "ems"
+  ems_default_mode: "manual"
+  ems_threshold_on_w: 1400
+  ems_threshold_off_w: 500
+  ems_histeresi_minuts: 5
+  ems_voltage: 230
+  ems_phases: 3
+  ems_poll_interval_s: 30
+schema:
+  hoymiles_dtu_ip: "str"
+  wallbox_charger_id: "str"
+  wallbox_email: "str"
+  wallbox_password: "password"
+  mqtt_host: "str"
+  mqtt_port: "port"
+  mqtt_username: "str"
+  mqtt_password: "password"
+  influxdb_url: "str?"
+  influxdb_token: "password?"
+  influxdb_org: "str?"
+  influxdb_bucket: "str?"
+  ems_default_mode: "list(manual|auto|eco)"
+  ems_threshold_on_w: "int"
+  ems_threshold_off_w: "int"
+  ems_histeresi_minuts: "int"
+  ems_voltage: "int"
+  ems_phases: "int"
+  ems_poll_interval_s: "int"
