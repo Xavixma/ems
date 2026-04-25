@@ -1,5 +1,5 @@
 name: "EMS - Energy Management System"
-version: "1.0.2"
+version: "1.0.3"
 slug: "ems"
 description: "Gestió energètica per solar Hoymiles i carregador EV Wallbox Pulsar Max"
 url: "https://github.com/YOUR_USER/ems"
