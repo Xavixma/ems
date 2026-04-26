@@ -19,19 +19,19 @@ class WallboxClient:
         email: str | None = None,
         password: str | None = None,
     ):
-        if not token and not (email and password):
-            raise ValueError("Provide either WALLBOX_TOKEN or WALLBOX_EMAIL + WALLBOX_PASSWORD")
-        self._email = email
-        self._password = password
+        self._email = email or None
+        self._password = password or None
         self._charger_id = charger_id
-        self._token: str | None = token
-        self._static_token = token is not None  # don't try to refresh a user-supplied token
+        self._token: str | None = token or None
+        self._static_token = bool(token)  # don't try to refresh a user-supplied token
         self._client = httpx.AsyncClient(timeout=10.0)
 
     async def close(self) -> None:
         await self._client.aclose()
 
     async def _authenticate(self) -> str:
+        if not (self._email and self._password):
+            raise ValueError("Wallbox credentials not configured (WALLBOX_EMAIL + WALLBOX_PASSWORD)")
         credentials = base64.b64encode(f"{self._email}:{self._password}".encode()).decode()
         resp = await self._client.get(
             f"{_API_BASE}/auth/token/user",

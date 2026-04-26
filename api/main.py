@@ -1,4 +1,5 @@
 import logging
+import os
 from contextlib import asynccontextmanager
 from fastapi import FastAPI
 from fastapi.staticfiles import StaticFiles
@@ -66,4 +67,5 @@ async def health():
 
 
 # Mounted last so API routes take priority
-app.mount("/", StaticFiles(directory="static", html=True), name="static")
+if os.path.isdir("static"):
+    app.mount("/", StaticFiles(directory="static", html=True), name="static")
