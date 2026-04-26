@@ -11,6 +11,7 @@ RUN pip install --no-cache-dir -r requirements.txt
 COPY api/ ./api/
 COPY core/ ./core/
 COPY integrations/ ./integrations/
+COPY static/ ./static/
 COPY ems/run.sh /run.sh
 RUN chmod a+x /run.sh
 

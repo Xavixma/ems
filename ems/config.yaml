@@ -1,5 +1,5 @@
 name: "EMS - Energy Management System"
-version: "1.0.6"
+version: "1.0.7"
 slug: "ems"
 description: "Gestió energètica per solar Hoymiles i carregador EV Wallbox Pulsar Max"
 url: "https://github.com/xavixma/ems"
