@@ -1,5 +1,5 @@
 name: "EMS - Energy Management System"
-version: "1.0.9"
+version: "1.0.10"
 slug: "ems"
 description: "Gestió energètica per solar Hoymiles i carregador EV Wallbox Pulsar Max"
 url: "https://github.com/xavixma/ems"
@@ -26,10 +26,11 @@ options:
   mqtt_port: 1883
   mqtt_username: "ems"
   mqtt_password: ""
-  influxdb_url: "http://homeassistant.local:8086"
-  influxdb_token: ""
-  influxdb_org: "ems"
-  influxdb_bucket: "ems"
+  influxdb_host: "a0d7b954-influxdb"
+  influxdb_port: 8086
+  influxdb_database: "ems"
+  influxdb_username: ""
+  influxdb_password: ""
   ems_default_mode: "manual"
   ems_threshold_on_w: 1400
   ems_threshold_off_w: 500
@@ -46,10 +47,11 @@ schema:
   mqtt_port: "port"
   mqtt_username: "str"
   mqtt_password: "password"
-  influxdb_url: "str?"
-  influxdb_token: "password?"
-  influxdb_org: "str?"
-  influxdb_bucket: "str?"
+  influxdb_host: "str?"
+  influxdb_port: "port?"
+  influxdb_database: "str?"
+  influxdb_username: "str?"
+  influxdb_password: "password?"
   ems_default_mode: "list(manual|auto|eco)"
   ems_threshold_on_w: "int"
   ems_threshold_off_w: "int"

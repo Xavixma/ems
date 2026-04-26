@@ -29,10 +29,11 @@ class Settings(BaseSettings):
     ems_poll_interval_s: int = 30
 
     # InfluxDB
-    influxdb_url: str = "http://localhost:8086"
-    influxdb_token: str = ""
-    influxdb_org: str = "ems"
-    influxdb_bucket: str = "ems"
+    influxdb_host: str = "localhost"
+    influxdb_port: int = 8086
+    influxdb_database: str = "ems"
+    influxdb_username: str = ""
+    influxdb_password: str = ""
 
     # API
     api_host: str = "0.0.0.0"

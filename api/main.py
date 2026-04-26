@@ -38,6 +38,7 @@ async def lifespan(app: FastAPI):
     app.state.energy_manager = energy_manager
     app.state.influx_writer = influx_writer
 
+    await influx_writer.ensure_database()
     scheduler.start()
     logger.info("EMS started")
 
